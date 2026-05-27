@@ -640,7 +640,7 @@
        triggers a file download. Works on iOS,
        Android, macOS, Windows, and Outlook.
     ── */
-    function downloadVCard() {
+    /* function downloadVCard() {
       var vcard = [
         "BEGIN:VCARD",
         "VERSION:3.0",
@@ -665,6 +665,68 @@
       a.download = "Brians.vcf";
       a.click();
       URL.revokeObjectURL(url);
+    } */
+    /* ── Save Contact — vCard (.vcf) download ──
+       Fetches profile.jpg, converts it to a base64
+       string, then embeds it as a PHOTO field inside
+       the vCard so the contact saves with Brian's photo.
+       Falls back gracefully (no PHOTO field) if the
+       image cannot be loaded (e.g. file not found).
+       Works on iOS, Android, macOS Contacts, Outlook.
+    ── */
+    function downloadVCard() {
+ 
+      /* Build and trigger the .vcf download.
+         photoLine = "PHOTO;ENCODING=b;TYPE=PNG:<base64>"
+         or empty string if the image failed to load. */
+      function buildAndDownload(photoLine) {
+        var fields = [
+          "BEGIN:VCARD",
+          "VERSION:3.0",
+          "FN:Brian Amanyire",
+          "N:Brian;Amanyire;;;B.S.E",
+          "ORG:Tech Edge Quality Consulting Inc.",
+          "TITLE:Founder\, CEO & Lead Technology Consultant",
+          "TEL;TYPE=WORK,VOICE:+16178630012",
+          "TEL;TYPE=CELL,VOICE:+18573911469",
+          "EMAIL;TYPE=WORK:info@techedgequality.com",
+          "URL:https://techedgequality.com",
+          "X-SOCIALPROFILE;type=linkedin:https://www.linkedin.com/company/tech-edge-quality-consulting-inc/",
+          "X-SOCIALPROFILE;type=instagram:https://www.instagram.com/techedgequality",
+          "X-SOCIALPROFILE;type=twitter:https://x.com/techedgequality"
+        ];
+ 
+        if (photoLine) fields.push(photoLine);
+        fields.push("END:VCARD");
+ 
+        var blob = new Blob([fields.join("\r\n")], { type: "text/vcard" });
+        var url  = URL.createObjectURL(blob);
+        var a    = document.createElement("a");
+        a.href     = url;
+        a.download = "Brians.vcf";
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+ 
+      /* Fetch profile.jpg and convert to base64.
+         If anything fails, download without a photo. */
+      fetch("profile.jpg")
+        .then(function(res) {
+          if (!res.ok) throw new Error("Image not found");
+          return res.blob();
+        })
+        .then(function(blob) {
+          var reader = new FileReader();
+          reader.onloadend = function() {
+            /* result is "data:image/png;base64,<data>"
+               — strip the prefix to get raw base64 */
+            var base64 = reader.result.split(",")[1];
+            buildAndDownload("PHOTO;ENCODING=b;TYPE=PNG:" + base64);
+          };
+          reader.onerror = function() { buildAndDownload(""); };
+          reader.readAsDataURL(blob);
+        })
+        .catch(function() { buildAndDownload(""); });
     }
 
   </script>
